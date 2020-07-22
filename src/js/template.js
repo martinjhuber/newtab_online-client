@@ -193,8 +193,6 @@ class TemplateImpl {
                     default:
                         false;
                 }
-                console.log(leftSide, comparator, rightSide);
-
             } else {
                 comparison = dataBlock[condition] ? true : false;
             }
