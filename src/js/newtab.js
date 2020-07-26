@@ -17,7 +17,6 @@ class NewTabOnline {
         this.commClient = new NewTabCommunication(config.serverUrl, config.tokenHeaderName);
         this.commClient.setToken(Cookies.get(config.tokenCookieName));
         this.user = null;
-        this.currentGridDefinition = null;
         this.isMenuOpen = false;
 
         I18n.setLang(Cookies.get(config.languageCookieName));
@@ -42,7 +41,14 @@ class NewTabOnline {
     }
 
     start() {
-        this.getUser();
+        let user = NewTabLocalStorage.getUser();
+        if (user) {
+            console.log("Taking user from cache");
+            this.setUserState(user);
+        } else {
+            console.log("Loading user from server");
+            this.getUserFromServer();
+        }
     }
 
     changeMenuState() {
@@ -59,7 +65,7 @@ class NewTabOnline {
         }
     }
 
-    getUser() {
+    getUserFromServer() {
         if (this.commClient.hasToken()) {
             this.commClient.getUser((data) => this.setUserState(data), () => this.removeUserState());
         } else {
@@ -80,11 +86,8 @@ class NewTabOnline {
             this.commClient.login(
                 name, 
                 password,
-                (data) => this.setUserState(data), 
-                (errorObj) => {
-                    this.showError(errorObj.error);
-                    this.removeUserState();
-                }
+                (data) =>  this.setUserState(data), 
+                (errorObj) => this.commErrorHandler(errorObj, this.removeUserState)
             );
         }
     }
@@ -102,6 +105,7 @@ class NewTabOnline {
             this.commClient.setToken(data.token);
         }
         this.user = data.user;
+        NewTabLocalStorage.setUser(data);
 
         this.loadGridDefinition();
     }
@@ -114,7 +118,7 @@ class NewTabOnline {
         Cookies.remove(config.tokenCookieName);
         this.commClient.setToken(null);
         this.user = null;
-        this.currentGridDefinition = null;
+        NewTabLocalStorage.clear();
         // Show login if no user present
         if (!this.isMenuOpen) {
             this.changeMenuState();
@@ -122,22 +126,59 @@ class NewTabOnline {
         Template.fill('gridContainer', 'logged-out-grid');
     }
 
-    showError(errorCode) {
-        console.error(errorCode);
-        $("#errorFlap").addClass("errorFlap-slide");
-        $("#errorMessage").text(I18n.get("error."+errorCode));
-        window.setTimeout(this.hideError, 4000);
+    commErrorHandler(errorObj, action) {
+        this.showMessage(errorObj.error, true);
+
+        if (errorObj.status == 401) {
+            this.removeUserState();
+        } else if (action) {
+            action();
+        }
     }
 
-    hideError() {
-        $("#errorFlap").removeClass("errorFlap-slide");
+    showMessage(message, isError) {
+        $("#messageFlap").addClass("messageFlap-slide");
+        if (isError) {
+            $("#message").text(I18n.get("error."+errorCode));
+            $("#message").addClass("errorMessage");
+        } else {
+            $("#message").text(I18n.get(message));
+        }
+        window.setTimeout(this.hideMessage, 4000);
+    }
+
+    hideMessage() {
+        $("#messageFlap").removeClass("messageFlap-slide");
+        $("#message").removeClass("errorMessage");
     }
 
     loadGridDefinition() {
+        let gridDef = NewTabLocalStorage.getGridDefinition();
+        if (gridDef) {
+            console.log("Taking grid definition from cache");
+            this.displayGrid(gridDef);
+            this.commClient.getGridDefinitionVersion((data) => this.checkGridVersion(data.version), (errorObj) => this.commErrorHandler(errorObj));
+        } else {
+            this.retrieveGridDefinitionFromServer();
+        }
+    }
+
+    checkGridVersion(serverVersion) {
+        let version = NewTabLocalStorage.getVersion();
+        if (version != serverVersion) {
+            console.log("Old version. Refreshing grid definition from server");
+            this.retrieveGridDefinitionFromServer();
+        }
+    }
+
+    retrieveGridDefinitionFromServer() {
+        this.showMessage("loading_grid");
+        console.log("Loading grid definition from server");
         this.commClient.getGridDefinition(
             (data) => {
+                this.hideMessage();
+                NewTabLocalStorage.setGridDefinition(data);
                 this.displayGrid(data);
-                this.currentGridDefinition = data;
             }, 
             null
         );
@@ -187,16 +228,14 @@ class NewTabOnline {
                 gutter: constants.gutter
             });
         }
-
-        this.currentGridDefinition = gridDefinition;
         
     }
 
     refreshView() {
         Template.refreshPersistent();
-
-        if (this.user && this.currentGridDefinition) {
-            this.displayGrid(this.currentGridDefinition);
+        let gridDefinition = NewTabLocalStorage.getGridDefinition();
+        if (this.user && gridDefinition) {
+            this.displayGrid(gridDefinition);
         } else {
             Template.fill('gridContainer', 'logged-out-grid');
         }
@@ -215,6 +254,37 @@ class NewTabOnline {
     }
 
 }
+
+let NewTabLocalStorage = {
+
+    getUser : function () {
+        let user = window.localStorage.getItem("user");
+        return user ? JSON.parse(user) : null;
+    },
+    setUser : function (user) {
+        window.localStorage.setItem("user", JSON.stringify(user));
+    },
+
+    getVersion : function () {
+        let version = window.localStorage.getItem("version");
+        return version ? parseInt(version) : null;
+    },
+
+    getGridDefinition : function () {
+        let gridDef = window.localStorage.getItem("gridDefinition");
+        return gridDef ? JSON.parse(gridDef) : null;
+    },
+    setGridDefinition : function (gridDef) {
+        window.localStorage.setItem("version", gridDef.version);
+        window.localStorage.setItem("gridDefinition", JSON.stringify(gridDef));
+    },
+
+    clear : function () {
+        NewTabLocalStorage.removeItem("user");
+        NewTabLocalStorage.removeItem("version");
+        NewTabLocalStorage.removeItem("gridDefinition");
+    }
+};
 
 let Generators = {
 

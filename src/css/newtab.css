@@ -163,7 +163,7 @@ h2 {
     left: 50%;
 }
 
-.errorFlap {
+.messageFlap {
     position: fixed;
     width: 100%;
     top: -30px;
@@ -171,15 +171,19 @@ h2 {
     text-align: center;
 }
 
-.errorFlap-slide {
+.messageFlap-slide {
     transition: 1s;
     top: 8px;
 }
 
-.errorMessage {
+.message {
     padding: 8px 30px;
-    background-color: #C66;
+    background-color: #66C;
     color: #000;
     font-weight: 700;
+}
+
+.errorMessage {
+    background-color: #C66;
 }
 

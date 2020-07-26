@@ -30,6 +30,10 @@ class NewTabCommunication {
         this.client.get("/grid", successCallback, errorCallback);
     }
 
+    getGridDefinitionVersion(successCallback, errorCallback) {
+        this.client.get("/grid/version", successCallback, errorCallback);
+    }
+
 }
 
 class Client {

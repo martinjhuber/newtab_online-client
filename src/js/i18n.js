@@ -8,6 +8,7 @@ const translations = {
         'by' : 'by',
         'github' : 'source code on GitHub',
         'please_login' : 'Please log in to see your new tab grid.',
+        'loading_grid' : 'Updating grid...',
         'error.no_db_connection' : 'Server failed to connect to DB. Please try again later.',
         'error.user_unknown' : 'Unknown user. Please check user name and password.',
         'error.token_invalid' : 'Session expired. Please log in again.',
@@ -24,6 +25,7 @@ const translations = {
         'by' : 'von',
         'github' : 'Source Code auf GitHub',
         'please_login' : 'Bitte loggen sie sich ein, um ihr \'new tab\' Raster zu sehen.',
+        'loading_grid' : 'Lade aktuelles Raster...',
         'error.no_db_connection' : 'Serververbindung mit der Datenback fehlgeschlagen. Bitte versuchen sie es später nochmal.',
         'error.user_unknown' : 'Unbekannter Benutzer. Bitte prüfen sie ihren Benutzernamen und Passwort.',
         'error.token_invalid' : 'Sitzung abgelaufen. Bitte erneut einloggen.'
