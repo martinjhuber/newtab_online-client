@@ -1,5 +1,5 @@
 
-import { config } from './config.js';
+import { config } from './config/config.js';
 import { NewTabCommunication } from './newtabCommunication.js';
 import { I18n } from './i18n.js';
 import { Template } from './template.js';
@@ -280,9 +280,9 @@ let NewTabLocalStorage = {
     },
 
     clear : function () {
-        NewTabLocalStorage.removeItem("user");
-        NewTabLocalStorage.removeItem("version");
-        NewTabLocalStorage.removeItem("gridDefinition");
+        window.localStorage.removeItem("user");
+        window.localStorage.removeItem("version");
+        window.localStorage.removeItem("gridDefinition");
     }
 };
 
