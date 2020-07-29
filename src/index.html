@@ -7,6 +7,7 @@
 	<meta name="robots" content="index,nofollow" />
     <meta name="keywords" content="new tab online,mjh" />
     <meta name="referrer" content="no-referrer">
+    <meta name="viewport" id="viewport" content="width=device-width, initial-scale=1" /> 
     <link rel="stylesheet" href="./resources/bootstrap.min.css">
     <link rel="stylesheet" href="./css/newtab.css">
     <script src="./resources/jquery-3.5.1.min.js"></script>
@@ -15,12 +16,7 @@
 </head>
 <body>
 
-<div id="messageFlap" class="messageFlap"><span id="message" class="message"></span></div>
-
-<h1>new tab online</h1>
-<div id="gridContainer">
-    <!-- Template: logged-out-grid OR grid -->
-</div>
+<div id="messageFlap" class="messageFlap"><div id="message" class="message"></div></div>
 
 <div id="user">
     <div id="userName"></div>
@@ -39,6 +35,11 @@
     <div id="footer">
         <!-- Template: footer -->
     </div>
+</div>
+
+<h1>new tab online</h1>
+<div id="gridContainer">
+    <!-- Template: logged-out-grid OR grid -->
 </div>
 
 </body>
@@ -92,5 +93,6 @@ import { NewTabOnline } from './js/newtab.js';
 let newtab = new NewTabOnline("container");
 newtab.init();
 newtab.start();
+
 </script>
 

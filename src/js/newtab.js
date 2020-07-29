@@ -29,7 +29,7 @@ class NewTabOnline {
         Template.fillAndPersist('userMenu', 'user-menu');
         Template.fill('language', 'language', { 'activeLang' : I18n.getLang() });
         Template.fillAndPersist('footer', 'footer', { 'year' : new Date().getFullYear() });
-        $("#user").click(this.changeMenuState);
+        $("#user").click(() => this.changeMenuState());
         $("#loginButton").click(() => this.login());
         $("#logoutLink").click(() => { this.logout(); return false; });
         $("#inputPassword").keypress((e) => {
@@ -38,6 +38,17 @@ class NewTabOnline {
             }
         });
         this.updateLanguageSwitchElement();
+
+        $(window).resize(() => this.applyViewport());
+        this.applyViewport();
+    }
+
+    applyViewport() {
+        if (screen.width < 500) {
+            $("#viewport").attr("content", "width=500");
+        } else {
+            $("#viewport").attr("content", "width=device-width, initial-scale=1");
+        }
     }
 
     start() {
@@ -107,6 +118,10 @@ class NewTabOnline {
         this.user = data.user;
         NewTabLocalStorage.setUser(data);
 
+        if (this.isMenuOpen) {
+            this.changeMenuState();
+        }
+
         this.loadGridDefinition();
     }
 
@@ -139,7 +154,7 @@ class NewTabOnline {
     showMessage(message, isError) {
         $("#messageFlap").addClass("messageFlap-slide");
         if (isError) {
-            $("#message").text(I18n.get("error."+errorCode));
+            $("#message").text(I18n.get("error."+message));
             $("#message").addClass("errorMessage");
         } else {
             $("#message").text(I18n.get(message));
@@ -148,6 +163,7 @@ class NewTabOnline {
     }
 
     hideMessage() {
+        $("#message").text("");
         $("#messageFlap").removeClass("messageFlap-slide");
         $("#message").removeClass("errorMessage");
     }
