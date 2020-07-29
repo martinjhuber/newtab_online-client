@@ -21,6 +21,10 @@ const js = function() {
     return src('./src/js/*.js').pipe(terser()).pipe(dest(BUILD_DIR+"/js"));
 }
 
+const resources = function() {
+    return src('./src/resources/**/*').pipe(dest(BUILD_DIR+"/resources"));
+}
+
 const configDev = function() {
     return src('./src/js/config/config-development.js')
         .pipe(rename('config.js'))
@@ -33,7 +37,7 @@ const configProd = function() {
         .pipe(dest(BUILD_DIR+"/js/config"));
 }
 
-const build = series(clean, html, parallel(css, js));
+const build = series(clean, html, parallel(css, js, resources));
 
 exports.clean = clean;
 exports.buildDev = series(build, configDev);
