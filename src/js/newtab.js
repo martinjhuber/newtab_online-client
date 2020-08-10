@@ -18,6 +18,7 @@ class NewTabOnline {
         this.commClient.setToken(Cookies.get(config.tokenCookieName));
         this.user = null;
         this.isMenuOpen = false;
+        this.editor = new NewTabOnlineEditor(this);
 
         I18n.setLang(Cookies.get(config.languageCookieName));
         Template.setI18n(I18n);
@@ -29,19 +30,36 @@ class NewTabOnline {
         Template.fillAndPersist('userMenu', 'user-menu');
         Template.fill('language', 'language', { 'activeLang' : I18n.getLang() });
         Template.fillAndPersist('footer', 'footer', { 'year' : new Date().getFullYear() });
+        Template.fillAndPersist('editBar', 'edit-bar');
+
         $("#user").click(() => this.changeMenuState());
         $("#loginButton").click(() => this.login());
+
+        $("#editModeLink").click(() => { this.editor.setEditModeStatus(true); return false; });
+        $("#addNewTileLink").click(() => { this.editor.startAddNewTile(); return false; });
+        $("#editModeClose").click(() => { this.editor.setEditModeStatus(false); return false; });
+
         $("#logoutLink").click(() => { this.logout(); return false; });
+
+        $("#modal").click((event) => { 
+            if (event.target == document.getElementById("modal")) {
+                this.editor.closeModal(); 
+            }
+        });
+
         $("#inputPassword").keypress((e) => {
             if (e.which == 13) {
                 this.login();
             }
         });
+
         this.updateLanguageSwitchElement();
 
         $(window).resize(() => this.applyViewport());
         this.applyViewport();
     }
+
+    /* Set up and navigation */
 
     applyViewport() {
         if (screen.width < 500) {
@@ -75,6 +93,8 @@ class NewTabOnline {
             this.isMenuOpen = true;
         }
     }
+
+    /* User state, login, logout */
 
     getUserFromServer() {
         if (this.commClient.hasToken()) {
@@ -141,6 +161,8 @@ class NewTabOnline {
         Template.fill('gridContainer', 'logged-out-grid');
     }
 
+    /* Error handling */
+
     commErrorHandler(errorObj, action) {
         this.showMessage(errorObj.error, true);
 
@@ -150,6 +172,8 @@ class NewTabOnline {
             action();
         }
     }
+
+    /* User messages */
 
     showMessage(message, isError) {
         $("#messageFlap").addClass("messageFlap-slide");
@@ -167,6 +191,8 @@ class NewTabOnline {
         $("#messageFlap").removeClass("messageFlap-slide");
         $("#message").removeClass("errorMessage");
     }
+
+    /* Grid definition methods */
 
     loadGridDefinition() {
         let gridDef = NewTabLocalStorage.getGridDefinition();
@@ -187,12 +213,16 @@ class NewTabOnline {
         }
     }
 
-    retrieveGridDefinitionFromServer() {
-        this.showMessage("loading_grid");
+    retrieveGridDefinitionFromServer(suppressMessage) {
+        if (!suppressMessage) {
+            this.showMessage("loading_grid");
+        }
         console.log("Loading grid definition from server");
         this.commClient.getGridDefinition(
             (data) => {
-                this.hideMessage();
+                if (!suppressMessage) {
+                    this.hideMessage();
+                }
                 NewTabLocalStorage.setGridDefinition(data);
                 this.displayGrid(data);
             }, 
@@ -205,7 +235,6 @@ class NewTabOnline {
         for(let grid of gridDefinition.grids) {
             grid.gridId = 'grid-'+grid.grid;
 
-            let index = 0;
             for(let tile of grid.tiles) {
                 tile.gridItemAddClass = '';
                 if (tile.w > 1) {
@@ -223,7 +252,7 @@ class NewTabOnline {
                 tile.gradientStyle = Generators.gradientStyle(color);
                 tile.borderStyle = Generators.borderStyle(color);
 
-                tile.imageId = grid.gridId + '-image-' + tile.tile;
+                tile.imageId = 'image-' + tile.tile;
 
                 tile.textColor = Generators.determineTextColor(color);
             }
@@ -245,7 +274,13 @@ class NewTabOnline {
             });
         }
         
+        if (this.editor.isEnabled) {
+            this.editor.setEditModeStatus(true);
+        }
+
     }
+
+    /* Template support */
 
     refreshView() {
         Template.refreshPersistent();
@@ -257,6 +292,8 @@ class NewTabOnline {
         }
     }
 
+    /* Language switching */
+
     switchLanguage(language) {
         I18n.setLang(language);
         Cookies.set(config.languageCookieName, language, { expires: 10 * 365 });
@@ -267,6 +304,298 @@ class NewTabOnline {
     updateLanguageSwitchElement() {
         Template.fill('language', 'language', { 'activeLang' : I18n.getLang() });
         $("#switchLanguage").click((event) => { this.switchLanguage($(event.target).data("lang")); return false; });
+    }
+
+}
+
+class NewTabOnlineEditor {
+
+    constructor(app) {
+        this.app = app;
+        this.isEnabled = false;
+        this.editTile = null;
+    }
+
+    setEditModeStatus(isEnabled) {
+        $('#editBar').css("display", isEnabled ? "block" : "none");
+        this.isEnabled = isEnabled;
+
+        if (isEnabled) {
+            $(".grid-item").click((event) => {
+                let tileId = $(event.target).closest("a").data("tileid");
+                this.startEditTile(tileId);
+                return false;
+            });
+        } else {
+            $(".grid-item").unbind('click');
+            this.closeModal();
+        }
+
+        this.editTile = null;
+    }
+
+    startAddNewTile() {
+        Template.fill('modalContent', 'new-tile-modal', null);
+
+        $(".inputTileGrid").click(function(event) {
+            $(".inputTileGrid").closest("label").removeClass("active");
+            $(".inputTileGrid").attr("checked", false);
+            $(event.target).closest("label").addClass("active");
+            $(event.target).attr("checked", true);
+        });
+        $(".inputTileSize").click(function(event) {
+            $(".inputTileSize").closest("label").removeClass("active");
+            $(".inputTileSize").attr("checked", false);
+            $(event.target).closest("label").addClass("active");
+            $(event.target).attr("checked", true);
+        });
+        $("#saveModalButton").click(() => this.saveNewTile());
+        $("#cancelModalButton").click(() => this.closeModal());
+        $('#modal').css("display", "block");
+
+        console.log("add tile");
+    }
+
+    getTileDefinition(tileId) {
+        let grids = NewTabLocalStorage.getGridDefinition().grids;
+        for(let gridId = 0; gridId < grids.length; gridId++) {
+            let numTiles = grids[gridId].tiles.length;
+            for (let tile of grids[gridId].tiles) {
+                if (tile.tile == tileId) {
+                    tile.grid = gridId;
+                    tile.maxOrder = numTiles - 1;
+                    return tile;
+                }
+            }
+        }
+        return null;
+    }
+
+    startEditTile(tileId) {
+
+        let tile = this.getTileDefinition(tileId);
+        if (tile == null) {
+            console.error("Tile not found!", tileId);
+            return;
+        }
+
+        let orderList = [];
+        for (let i = 0; i <= tile.maxOrder; i++) {
+            orderList[i] = { "id" : i, "number" : i + 1, "isCurrent" : (tile.order == i) };
+        }
+
+        let data = {
+            "grid" : tile.grid,
+            "orderList" : orderList,
+            "tileSize" : ""+tile.w+"x"+tile.h
+        };
+
+        Template.fill('modalContent', 'edit-tile-modal', data);
+
+        $(".inputTileGrid").click((event) => {
+            this.sendMoveTile(tile.tile, parseInt($(event.target).data("gridid")));
+        });
+
+        $(".inputTileOrder").click((event) => {
+            this.sendReorderTile(tile.tile, parseInt($(event.target).data("orderid")));
+        });
+
+        $("#inputTileText").val(tile.text);
+        $("#inputTileUrl").val(tile.href);
+        $("#inputTileColor").val(tile.color);
+        $(".inputTileSize").click(function(event) {
+            $(".inputTileSize").closest("label").removeClass("active");
+            $(".inputTileSize").attr("checked", false);
+            $(event.target).closest("label").addClass("active");
+            $(event.target).attr("checked", true);
+        });
+        $('#inputTileImage').change(function() {
+            $(this).next('.custom-file-label').html($(this).val());
+        });
+        $("#inputTileScale").val(tile.imageScale);
+
+        $("#saveSettingsButton").click(() => this.saveTileSettings());
+
+        $("#removeImageModalButton").click(() => this.sendRemoveTileImage(tileId));
+        $("#deleteModalButton").click(() => this.sendDeleteTile(tileId));
+
+        $("#cancelModalButton").click(() => this.closeModal());
+        
+        $('#modal').css("display", "block");
+        this.editTile = tile;
+
+        console.log("edit tileId:", tile.tile);
+    }
+
+    saveNewTile() {
+        this.setInputDisabled(true);
+
+        let text = $("#inputTileText").val();
+        let href = $("#inputTileUrl").val();
+        let color = $("#inputTileColor").val();
+        if (color == "") {
+            color = null;
+        }
+        let selectedTileSize = $('input[name=inputTileSize]:checked', '#modalContent').data("size");
+        let selectedGridElement = $('input[name=inputTileGrid]:checked', '#modalContent').data("gridid");
+
+        let w = selectedTileSize.charAt(0) == '2' ? 2 : 1;
+        let h = selectedTileSize.charAt(2) == '2' ? 2 : 1;
+
+        if (!this.verifyInput(text, href, color)) {
+            return;
+        }
+
+        this.sendNewTile(text, href, color, w, h, selectedGridElement);
+    }
+
+    saveTileSettings() {
+        this.setInputDisabled(true);
+
+        let text = $("#inputTileText").val();
+        let href = $("#inputTileUrl").val();
+        let color = $("#inputTileColor").val();
+        if (color == "") {
+            color = null;
+        }
+        let selectedTileSize = $('input[name=inputTileSize]:checked', '#modalContent').data("size");
+        let w = selectedTileSize.charAt(0) == '2' ? 2 : 1;
+        let h = selectedTileSize.charAt(2) == '2' ? 2 : 1;
+
+        let imageScale = $("#inputTileScale").val();
+        if (imageScale < 1 || imageScale > 200) {
+            imageScale = null;
+        }
+
+        if (!this.verifyInput(text, href, color)) {
+            return;
+        }
+
+        let inputFileElem = $("#inputTileImage")[0];
+        if (inputFileElem && inputFileElem.files && inputFileElem.files.length > 0) {
+            let file = inputFileElem.files[0];
+            let reader = new FileReader();
+            reader.onloadend = () => {
+                if (reader.result.substring(0, 11) != "data:image/") {
+                    this.showError("invalid_image");
+                } else {
+                    this.sendTileSettings(this.editTile.tile, text, href, color, w, h, reader.result, imageScale);
+                }
+            };
+            reader.readAsDataURL(file);
+        } else {
+            this.sendTileSettings(this.editTile.tile, text, href, color, w, h, null, imageScale);
+        }
+    }
+
+    sendNewTile(text, href, color, width, height, gridId) {
+        if (text == null || text.length < 1 || href == null || href.length)
+
+        this.app.commClient.createTile(
+            text, href, color, width, height, gridId, 
+            () => this.successCallback(), 
+            (error) => this.errorCallback(error)
+        );
+    }
+
+    sendMoveTile(tileId, gridId) {
+        if (this.editTile.grid == gridId) {
+            return;
+        }
+
+        this.setInputDisabled(true);
+        
+        this.app.commClient.moveTile(tileId, gridId, 
+            () => this.successCallback(), 
+            (error) => this.errorCallback(error)
+        );
+    }
+
+    sendReorderTile(tileId, orderId) {
+        if (this.editTile.order == orderId) {
+            return;
+        }
+        
+        this.setInputDisabled(true);
+
+        this.app.commClient.reorderTile(tileId, orderId, 
+            () => this.successCallback(), 
+            (error) => this.errorCallback(error)
+        );
+    }
+
+    sendDeleteTile(tileId) {
+        this.setInputDisabled(true);
+
+        this.app.commClient.deleteTile(tileId,  
+            () => this.successCallback(), 
+            (error) => this.errorCallback(error)
+        );
+    }
+
+    sendRemoveTileImage(tileId) {
+        this.setInputDisabled(true);
+
+        this.app.commClient.removeTileImage(tileId,  
+            () => this.successCallback(), 
+            (error) => this.errorCallback(error)
+        );
+    }
+
+    sendTileSettings(tileId, text, href, color, width, height, imageBase64, imageScale) {
+        this.setInputDisabled(true);
+
+        this.app.commClient.editTile(
+            tileId, text, href, color, width, height, imageBase64, imageScale,
+            () => this.successCallback(), 
+            (error) => this.errorCallback(error)
+        );
+    }
+
+    successCallback() {
+        this.closeModal();
+        this.app.retrieveGridDefinitionFromServer(true);
+        this.app.showMessage("change_success");
+    }
+
+    errorCallback(error) {
+        this.showError(error.error);
+    }
+
+    verifyInput(text, href, color) {
+        if (text == null || text.length < 1) {
+            this.showError("input_text_invald");
+            return false;
+        }
+        if (href == null || href.length < 1) {
+            this.showError("input_href_invald");
+            return false;
+        }
+        if (color != null && !color.match(/^#[0-9abcdefABCDEF]{3,6}$/)) {
+            this.showError("input_color_invald");
+            return false;
+        }
+        return true;
+    }
+
+    setInputDisabled(isDisabled) {
+        $("input,button", "#modalContent").prop('disabled', isDisabled);
+    }
+
+    closeModal() {
+        $('#modal').css("display", "none");
+        $('#modalContent').html("--");
+    }
+
+    showError(message) {
+        this.setInputDisabled(false);
+        $("#modalMessage").css("display", "block");
+        $("#modalMessage").text(I18n.get("error."+message));
+    }
+
+    hideMessage() {
+        $("#modalMessage").text("");
+        $("#modalMessage").css("display", "none");
     }
 
 }
@@ -384,6 +713,22 @@ let Generators = {
         }
 
         return "tileText-white";
+    },
+
+    toDataUrl : function(id, url, callback) {
+
+
+        var xhr = new XMLHttpRequest();
+        xhr.onload = function() {
+            var reader = new FileReader();
+            reader.onloadend = function() {
+                callback(id, reader.result);
+            }
+            reader.readAsDataURL(xhr.response);
+        };
+        xhr.open('GET', url);
+        xhr.responseType = 'blob';
+        xhr.send();
     }
 }
 

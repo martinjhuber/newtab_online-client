@@ -1,7 +1,8 @@
-const { src, dest, series, parallel } = require('gulp');
+const { src, dest, series, parallel, watch } = require('gulp');
 const del = require('del');
 const rename = require('gulp-rename');
 const terser = require('gulp-terser-js');   // uglify js
+const less = require('gulp-less');
 
 const BUILD_DIR = "./build";
 
@@ -14,7 +15,9 @@ const html = function() {
 }
 
 const css = function() {
-    return src('./src/css/*').pipe(dest(BUILD_DIR+"/css"));
+    return src('./src/css/*.less')
+        .pipe(less())
+        .pipe(dest(BUILD_DIR+"/css"));
 }
 
 const js = function() {
@@ -43,3 +46,7 @@ exports.clean = clean;
 exports.buildDev = series(build, configDev);
 exports.buildProd = series(build, configProd);
 exports.build = exports.buildDev;
+
+exports.watch = function() {
+    watch('./src/**/*', exports.buildDev);
+}

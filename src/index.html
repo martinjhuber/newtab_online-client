@@ -16,34 +16,45 @@
 </head>
 <body>
 
-<div id="messageFlap" class="messageFlap"><div id="message" class="message"></div></div>
+    <div id="messageFlap" class="messageFlap"><div id="message" class="message"></div></div>
 
-<div id="user">
-    <div id="userName"></div>
-    <div id="navigation"><img src="./resources/icons/navigation-menu.svg" class="icon" style="filter: invert(1);" id="menuButton"/></div>
-</div>
-<div id="menu" style="display: none;">
-    <div id="login" style="display: none;">
-        <!-- Template: login-form -->
+    <div id="user" class="user">
+        <div id="userName" class="userName"></div>
+        <div id="navigation" class="navigation"><img src="./resources/icons/navigation-menu.svg" class="icon" style="filter: invert(1);" id="menuButton"/></div>
     </div>
-    <div id="userMenu" style="display: none;">
-        <!-- Template: user-menu -->
+    <div id="menu" class="menu" style="display: none;">
+        <div id="login" style="display: none;">
+            <!-- Template: login-form -->
+        </div>
+        <div id="userMenu" class="userMenu" style="display: none;">
+            <!-- Template: user-menu -->
+        </div>
+        <div id="language" class="languageMenu">
+            <!-- Template: language -->
+        </div>    
+        <div id="footer" class="footer">
+            <!-- Template: footer -->
+        </div>
     </div>
-    <div id="language">
-        <!-- Template: language -->
-    </div>    
-    <div id="footer">
-        <!-- Template: footer -->
-    </div>
-</div>
 
-<h1>new tab online</h1>
-<div id="gridContainer">
-    <!-- Template: logged-out-grid OR grid -->
-</div>
+    <h1>new tab online</h1>
+    <div id="gridContainer" class="gridContainer">
+        <!-- Template: logged-out-grid OR grid -->
+    </div>
+
+    <div id="editBar" class="editBar" style="display: none;">
+        <!-- Template: edit-bar -->
+    </div>
+
+    <div id="modal" class="modal" style="display: none;">
+        <div id="modalContent" class="modalContent">
+            <!-- Template: new-tile-modal OR edit-tile-modal -->
+        </div>
+    </div>
 
 </body>
 
+<!-- Template: login-form -->
 <script id="tmpl-login-form" type="text/template">
     <h2>{{i18n:login}}</h2>
     <form>
@@ -59,32 +70,175 @@
     </form>
 </script>
 
+<!-- Template: user-menu -->
 <script id="tmpl-user-menu" type="text/template">
     <ul>
-        <li><a id="logoutLink" href="#">Logout</a></li>
+        <li><a id="editModeLink" href="#">{{i18n:edit_mode}}</a></li>
+        <li><a id="logoutLink" href="#">{{i18n:logout}}</a></li>
     </ul>
 </script>
 
+<!-- Template: language -->
 <script id="tmpl-language" type="text/template">
     {{i18n:language}}: {{if:activeLang==en}}EN{{else}}<a id="switchLanguage" data-lang="en" href="#">EN</a>{{end}}{{end}} | {{if:activeLang==de}}DE{{else}}<a id="switchLanguage" data-lang="de" href="#">DE</a>{{end}}{{end}}
 </script>
 
+<!-- Template: footer -->
 <script id="tmpl-footer" type="text/template">
     {{i18n:by}} <a href="https://www.mjh.at/">mjh.at</a> &copy;{{=year}}<br/><a href="#">{{i18n:github}}</a>
 </script>
 
+<!-- Template: logged-out-grid -->
 <script id="tmpl-logged-out-grid" type="text/template">
     <p>{{i18n:please_login}}</p>
 </script>
 
+<!-- Template: grid -->
 <script id="tmpl-grid" type="text/template">
-{{for:grids}}
-<div id="grid-{{=grid}}" class="grid">
-    {{for:tiles}}
-    <a class="grid-item{{=gridItemAddClass}}" style="{{=gradientStyle}} {{=borderStyle}}" href="{{=href}}">{{if:imageBase64}}<img src="{{=imageBase64}}" border="0" alt="{{=text}}" class="tileImage" id="{{=imageId}}" style="display: none;">{{end}}<div class="tileText {{=textColor}}">{{=text}}</div></a>
+    {{for:grids}}
+    <div id="grid-{{=grid}}" class="grid">
+        {{for:tiles}}
+        <a class="grid-item{{=gridItemAddClass}}" style="{{=gradientStyle}} {{=borderStyle}}" href="{{=href}}" data-tileid="{{=tile}}" id="tile-{{=tile}}">{{if:imageBase64}}<img src="{{=imageBase64}}" border="0" alt="{{=text}}" class="tileImage" id="{{=imageId}}" style="display: none;">{{end}}<div class="tileText {{=textColor}}">{{=text}}</div></a>
+        {{end}}
+    </div>
     {{end}}
-</div>
-{{end}}
+</script>
+
+<!-- Template: edit-bar -->
+<script id="tmpl-edit-bar" type="text/template">
+    <div class="description">{{i18n:select_tile_to_edit}} <a href="#" id="addNewTileLink">{{i18n:add_new_tile}}</a>.</div>
+    <div class="close"><img src="./resources/icons/close.svg" class="icon" id="editModeClose" title="{{i18n:close_edit_mode}}"/></div>
+</script>
+
+<!-- Template: new-tile-modal -->
+<script id="tmpl-new-tile-modal" type="text/template">
+    <h2>{{i18n:add_tile_title}}</h2>
+    <div id="modalMessage" class="message errorMessage" style="display: none;"></div>
+    <form>
+        <div class="form-group">
+            <label for="inputTileGrid">{{i18n:tile_grid}}</label><br/>
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                <label class="btn btn-primary active">
+                    <input type="radio" name="inputTileGrid" class="inputTileGrid" data-gridid="0" checked="checked"> 1
+                </label>
+                <label class="btn btn-primary">
+                    <input type="radio" name="inputTileGrid" class="inputTileGrid" data-gridid="1"> 2
+                </label>
+                <label class="btn btn-primary">
+                    <input type="radio" name="inputTileGrid" class="inputTileGrid" data-gridid="2"> 3
+                </label>
+                <label class="btn btn-primary">
+                    <input type="radio" name="inputTileGrid" class="inputTileGrid" data-gridid="3"> 4
+                </label>
+              </div>
+        </div>
+        <div class="form-group">
+            <label for="inputTileText">{{i18n:tile_text}}</label>
+            <input type="text" class="form-control" id="inputTileText">
+        </div>
+        <div class="form-group">
+            <label for="inputTileUrl">{{i18n:tile_url}}</label>
+            <input type="text" class="form-control" id="inputTileUrl">
+        </div>
+        <div class="form-group">
+            <label for="inputTileColor">{{i18n:tile_color}}</label>
+            <input type="text" class="form-control" id="inputTileColor">
+        </div>
+        <div class="form-group">
+            <label for="inputTileSize">{{i18n:tile_size}}</label><br/>
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                <label class="btn btn-primary active">
+                    <input type="radio" name="inputTileSize" id="inputTileSize1x1" class="inputTileSize" data-size="1x1" checked="checked"> {{i18n:1x1}}
+                </label>
+                <label class="btn btn-primary">
+                    <input type="radio" name="inputTileSize" id="inputTileSize1x2" class="inputTileSize" data-size="1x2"> {{i18n:1x2}}
+                </label>
+                <label class="btn btn-primary">
+                    <input type="radio" name="inputTileSize" id="inputTileSize2x1" class="inputTileSize" data-size="2x1"> {{i18n:2x1}}
+                </label>
+                <label class="btn btn-primary">
+                    <input type="radio" name="inputTileSize" id="inputTileSize2x2" class="inputTileSize" data-size="2x2"> {{i18n:2x2}}
+                </label>
+              </div>
+        </div>
+    </form>
+    <button type="button" class="btn btn-primary" id="saveModalButton">{{i18n:add}}</button> <button type="button" class="btn btn-secondary" id="cancelModalButton">{{i18n:cancel}}</button>
+</script>
+
+<!-- Template: edit-tile-modal -->
+<script id="tmpl-edit-tile-modal" type="text/template">
+    <h2>{{i18n:edit_tile_title}}</h2>
+    <div id="modalMessage" class="message errorMessage" style="display: none;"></div>
+    <form>
+        <h3>{{i18n:move_title}}</h3>
+        <div class="form-group">
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                <label class="btn btn-{{if:grid==0}}success{{else}}primary{{end}}{{end}}">
+                    <input type="radio" name="inputTileGrid" id="inputTileGrid0" class="inputTileGrid" data-gridid="0"> 1
+                </label>
+                <label class="btn btn-{{if:grid==1}}success{{else}}primary{{end}}{{end}}">
+                    <input type="radio" name="inputTileGrid" id="inputTileGrid1" class="inputTileGrid" data-gridid="1"> 2
+                </label>
+                <label class="btn btn-{{if:grid==2}}success{{else}}primary{{end}}{{end}}">
+                    <input type="radio" name="inputTileGrid" id="inputTileGrid2" class="inputTileGrid" data-gridid="2"> 3
+                </label>
+                <label class="btn btn-{{if:grid==3}}success{{else}}primary{{end}}{{end}}">
+                    <input type="radio" name="inputTileGrid" id="inputTileGrid3" class="inputTileGrid" data-gridid="3"> 4
+                </label>
+              </div>
+        </div>
+        <hr/>
+        <h3>{{i18n:reorder_title}}</h3>
+        <div class="form-group">
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                {{for:orderList}}
+                <label class="btn btn-{{if:isCurrent}}success{{else}}primary{{end}}{{end}}">
+                    <input type="radio" name="inputTileOrder" id="inputTileOrder{{=id}}" class="inputTileOrder" data-orderid="{{=id}}"> {{=number}}
+                </label>
+                {{end}}
+        </div>
+        <hr/>
+        <h3>{{i18n:basic_settings_title}}</h3>    
+        <div class="form-group">
+            <label for="inputTileText">{{i18n:tile_text}}</label>
+            <input type="text" class="form-control" id="inputTileText">
+        </div>
+        <div class="form-group">
+            <label for="inputTileUrl">{{i18n:tile_url}}</label>
+            <input type="text" class="form-control" id="inputTileUrl">
+        </div>
+        <div class="form-group">
+            <label for="inputTileColor">{{i18n:tile_color}}</label>
+            <input type="text" class="form-control" id="inputTileColor">
+        </div>
+        <div class="form-group">
+            <label for="inputTileSize">{{i18n:tile_size}}</label><br/>
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                <label class="btn btn-{{if:tileSize==1x1}}success active{{else}}primary{{end}}{{end}}">
+                    <input type="radio" name="inputTileSize" id="inputTileSize1x1" class="inputTileSize" data-size="1x1"{{if:tileSize==1x1}} checked="checked"{{end}}> {{i18n:1x1}}
+                </label>
+                <label class="btn btn-{{if:tileSize==1x2}}success active{{else}}primary{{end}}{{end}}">
+                    <input type="radio" name="inputTileSize" id="inputTileSize1x2" class="inputTileSize" data-size="1x2"{{if:tileSize==1x2}} checked="checked"{{end}}> {{i18n:1x2}}
+                </label>
+                <label class="btn btn-{{if:tileSize==2x1}}success active{{else}}primary{{end}}{{end}}">
+                    <input type="radio" name="inputTileSize" id="inputTileSize2x1" class="inputTileSize" data-size="2x1"{{if:tileSize==2x1}} checked="checked"{{end}}> {{i18n:2x1}}
+                </label>
+                <label class="btn btn-{{if:tileSize==2x2}}success active{{else}}primary{{end}}{{end}}">
+                    <input type="radio" name="inputTileSize" id="inputTileSize2x2" class="inputTileSize" data-size="2x2"{{if:tileSize==2x2}} checked="checked"{{end}}> {{i18n:2x2}}
+                </label>
+              </div>
+        </div>
+        <label>{{i18n:select_image}}</label>
+        <div class="custom-file">
+            <input type="file" class="custom-file-input" id="inputTileImage">
+            <label class="custom-file-label" for="inputTileImage">{{i18n:select_image}}</label>
+        </div>
+        <div class="form-group">
+            <label for="inputTileScale">{{i18n:tile_imageScale}}</label>
+            <input type="text" class="form-control" id="inputTileScale">
+        </div>
+    </form>
+    <button type="button" class="btn btn-success" id="saveSettingsButton">{{i18n:save}}</button>  <button type="button" class="btn btn-warning" id="removeImageModalButton">{{i18n:remove_image}}</button> <button type="button" class="btn btn-danger" id="deleteModalButton">{{i18n:delete}}</button> <button type="button" class="btn btn-secondary" id="cancelModalButton">{{i18n:cancel}}</button>
 </script>
 
 <script type="module">

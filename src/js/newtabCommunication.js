@@ -18,7 +18,6 @@ class NewTabCommunication {
     }
 
     login(name, password, successCallback, errorCallback) {
-        console.log("login call");
         this.client.post("/user/login", { name : name, password : password }, successCallback, errorCallback);
     }
 
@@ -34,6 +33,52 @@ class NewTabCommunication {
         this.client.get("/grid/version", successCallback, errorCallback);
     }
 
+    createTile(text, href, color, width, height, gridId, successCallback, errorCallback) {
+        let data = {
+            gridId : gridId,
+            text : text,
+            href : href,
+            color : color,
+            w : width,
+            h : height
+        };
+        this.client.post("/grid/tile", data, successCallback, errorCallback);
+    }
+
+    editTile(tileId, text, href, color, width, height, imageBase64, imageScale, successCallback, errorCallback) {
+        let data = {
+            text : text,
+            href : href,
+            color : color,
+            w : width,
+            h : height,
+            imageBase64 : imageBase64,
+            imageScale : imageScale
+        };
+        this.client.put("/grid/tile/"+tileId, data, successCallback, errorCallback);
+    }
+
+    deleteTile(tileId, successCallback, errorCallback) {
+        this.client.delete("/grid/tile/"+tileId, null, successCallback, errorCallback);
+    }
+
+    removeTileImage(tileId, successCallback, errorCallback) {
+        this.client.delete("/grid/tile/"+tileId+"/image", null, successCallback, errorCallback);
+    }
+
+    moveTile(tileId, gridId, successCallback, errorCallback) {
+        let data = {
+            gridId : gridId
+        };
+        this.client.put("/grid/tile/"+tileId+"/gridId", data, successCallback, errorCallback);
+    }
+
+    reorderTile(tileId, orderId, successCallback, errorCallback) {
+        let data = {
+            order : orderId
+        };
+        this.client.put("/grid/tile/"+tileId+"/order", data, successCallback, errorCallback);
+    }
 }
 
 class Client {
