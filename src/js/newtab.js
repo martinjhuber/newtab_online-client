@@ -175,13 +175,13 @@ class NewTabOnline {
 
     /* User messages */
 
-    showMessage(message, isError) {
+    showMessage(messageTextId, isError) {
         $("#messageFlap").addClass("messageFlap-slide");
         if (isError) {
-            $("#message").text(I18n.get("error."+message));
+            $("#message").text(I18n.get("error."+messageTextId));
             $("#message").addClass("errorMessage");
         } else {
-            $("#message").text(I18n.get(message));
+            $("#message").text(I18n.get(messageTextId));
         }
         window.setTimeout(this.hideMessage, 4000);
     }
@@ -326,6 +326,7 @@ class NewTabOnlineEditor {
                 this.startEditTile(tileId);
                 return false;
             });
+            this.app.changeMenuState();
         } else {
             $(".grid-item").unbind('click');
             this.closeModal();
@@ -416,8 +417,8 @@ class NewTabOnlineEditor {
 
         $("#saveSettingsButton").click(() => this.saveTileSettings());
 
-        $("#removeImageModalButton").click(() => this.sendRemoveTileImage(tileId));
-        $("#deleteModalButton").click(() => this.sendDeleteTile(tileId));
+        $("#removeImageModalButton").click(() => this.startRemoveTileImage(tileId));
+        $("#deleteModalButton").click(() => this.startDeleteTile(tileId));
 
         $("#cancelModalButton").click(() => this.closeModal());
         
@@ -486,6 +487,14 @@ class NewTabOnlineEditor {
         } else {
             this.sendTileSettings(this.editTile.tile, text, href, color, w, h, null, imageScale);
         }
+    }
+
+    startDeleteTile(tileId) {
+        this.showConfirmDialog("confirm_delete_tile", () => this.sendDeleteTile(tileId));
+    }
+
+    startRemoveTileImage(tileId) {
+        this.showConfirmDialog("confirm_remove_tile_image", () => this.sendRemoveTileImage(tileId));
     }
 
     sendNewTile(text, href, color, width, height, gridId) {
@@ -587,10 +596,10 @@ class NewTabOnlineEditor {
         $('#modalContent').html("--");
     }
 
-    showError(message) {
+    showError(errorTextId) {
         this.setInputDisabled(false);
         $("#modalMessage").css("display", "block");
-        $("#modalMessage").text(I18n.get("error."+message));
+        $("#modalMessage").text(I18n.get("error."+errorTextId));
     }
 
     hideMessage() {
@@ -598,6 +607,21 @@ class NewTabOnlineEditor {
         $("#modalMessage").css("display", "none");
     }
 
+    showConfirmDialog(messageTextId, yesFunction) {
+        $("#confirm").css("display", "block");
+        Template.fillAndPersist('confirmContent', 'confirm-modal');
+        $("#confirmText").text(I18n.get(messageTextId));
+
+        $("#yesActionButton").click(() => {
+            yesFunction();
+            $("#confirm").css("display", "none");
+            return false;
+        });
+        $("#noActionButton").click(() => {
+            $("#confirm").css("display", "none");
+            return false;
+        });
+    }
 }
 
 let NewTabLocalStorage = {

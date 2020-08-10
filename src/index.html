@@ -52,6 +52,11 @@
         </div>
     </div>
 
+    <div id="confirm" class="confirm" style="display: none;">
+        <div id="confirmContent" class="confirmContent">
+            <!-- Template: confirm-modal -->
+        </div>        
+    </div>
 </body>
 
 <!-- Template: login-form -->
@@ -238,7 +243,19 @@
             <input type="text" class="form-control" id="inputTileScale">
         </div>
     </form>
-    <button type="button" class="btn btn-success" id="saveSettingsButton">{{i18n:save}}</button>  <button type="button" class="btn btn-warning" id="removeImageModalButton">{{i18n:remove_image}}</button> <button type="button" class="btn btn-danger" id="deleteModalButton">{{i18n:delete}}</button> <button type="button" class="btn btn-secondary" id="cancelModalButton">{{i18n:cancel}}</button>
+    <button type="button" class="btn btn-success" id="saveSettingsButton">{{i18n:save}}</button>
+    <hr/>
+    <h3>{{i18n:options_title}}</h3>  
+    <button type="button" class="btn btn-warning" id="removeImageModalButton">{{i18n:remove_image}}</button> <button type="button" class="btn btn-danger" id="deleteModalButton">{{i18n:delete}}</button>
+    <hr/>
+    <button type="button" class="btn btn-secondary" id="cancelModalButton">{{i18n:cancel}}</button>
+</script>
+
+<script id="tmpl-confirm-modal" type="text/template">
+    <h2>{{i18n:confirm_action}}</h2>
+    <p id="confirmText"></p>
+    <button type="button" class="btn btn-success" id="yesActionButton">{{i18n:yes}}</button>
+    <button type="button" class="btn btn-danger" id="noActionButton">{{i18n:no}}</button>
 </script>
 
 <script type="module">
